@@ -1,4 +1,4 @@
-# Server Program:
+# Server Program for socket programming
 import socket
 import threading
 
