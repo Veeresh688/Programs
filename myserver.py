@@ -2,6 +2,8 @@
 import socket
 import threading
 
+#First change
+
 HEADER = 64
 PORT = 5050
 SERVER = “138.68.140.83”
