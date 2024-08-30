@@ -1,3 +1,5 @@
+# Framework program using the database.
+
 import sqlite3
 
 dataBasePath = 'C:\\Users\\hsuao\\Framework.db'
@@ -5,7 +7,6 @@ menuTableName = 'fwTable'
 connection = sqlite3.connect(dataBasePath)
 cursor = connection.cursor()
 
-# Global variables
 dataTableName = None
 dataTableFields = None
 menuData = None
@@ -39,19 +40,28 @@ def getMenuData():
         menuData = menu_record[0]
     else:
         menuData = "No menu data found."
+
 def printSuccessMessage(operationName):
     print(operationName + " successfully.")
 
+def printSavedMessage():
+    command = f"select menuValue from {menuTableName} where key = 'SavedMessage'"
+    cursor.execute(command)
+    message = cursor.fetchone()
+    savedMessage = message[0]
+    print(savedMessage)
+
+
 def addRecord():
     if dataTableFields:
-        placeholders = ', '.join(['?'] * len(dataTableFields))
-        command = f"INSERT INTO {dataTableName} ({', '.join(dataTableFields)}) VALUES ({placeholders})"
         recordValues = []
         for dataTableField in dataTableFields:
             recordValues.append(input(f"Enter {dataTableField}: "))
-        cursor.execute(command, tuple(recordValues))
+        recordValues = tuple(recordValues)
+        command = f"insert into {dataTableName} values {recordValues}"
+        cursor.execute(command)
         connection.commit()
-        printSuccessMessage("Added")
+        printSavedMessage()
     else:
         print("No table fields found.")
 
@@ -59,6 +69,7 @@ def readRecords():
     if dataTableName:
         cursor.execute(f"SELECT * FROM {dataTableName}")
         records = cursor.fetchall()
+        print()
         for record in records:
             for indexCounter in range(len(dataTableFields)):
                 print(f"{dataTableFields[indexCounter]}: {record[indexCounter]}")
@@ -68,7 +79,7 @@ def readRecords():
 
 def getId(operationName):
     global givenId
-    givenId = input(f"Enter id to {operationName}: ")
+    givenId = input(f"Enter {dataTableFields[0]} to {operationName}: ")
 
 def printNoRecordFound():
     print(f"No record found with id '{givenId}'.\n")
@@ -77,9 +88,11 @@ def search():
     global isItemFound
     isItemFound = 0
     if dataTableName and dataTableFields:
+        # key = "dataTableFields[0]" 
         #cursor.execute(f"select * from {dataTableName} where {dataTableFields[0]} = {givenId}")
-        query = f"select * from {dataTableName} where {dataTableFields[0]} = '{givenId}'"
+        # query = "select * from " + dataTableName +  " where \"" +  dataTableFields[0] + "\" = \'" + givenId + "\'"
         #print(query)
+        query = f"select * from {dataTableName} where \"{dataTableFields[0]}\" = \'{givenId}\'"
         cursor.execute(query)
         records = cursor.fetchall()
         if records:
@@ -103,13 +116,19 @@ def updateRecord():
         printNoRecordFound()
     else:
         for indexCounter in range(1, len(dataTableFields)):
-            print("Update " + dataTableFields[indexCounter])    
+            print(f"{indexCounter}. Update {dataTableFields[indexCounter]}")    
         choice = int(input("Enter choice: "))
-        newValue = input(f"Enter new {dataTableFields[choice]}: ")
-        command = f"update {dataTableName} set {dataTableFields[choice]} = '{newValue}' where {dataTableFields[0]} = '{givenId}'"
-        cursor.execute(command)
-        connection.commit()
-        printSuccessMessage("Updated")
+        if choice <= len(dataTableFields) - 1:
+            newValue = input(f"Enter new {dataTableFields[choice]}: ")
+            #command = "update " + dataTableName + " set \"" + dataTableFields[choice] + "\" = \'" + newValue +  "\' where \"" + dataTableFields[0] + "\" = \'" + givenId + "\'"
+            command = f"update {dataTableName} set \"{dataTableFields[choice]}\" = \'{newValue}\' where \"{dataTableFields[0]}\" = \'{givenId}\'"
+            # print(command)
+            cursor.execute(command)
+            connection.commit()
+            printSuccessMessage("Updated")
+        else:
+            print("Invalid choice.")
+
 def deleteRecord():
     getId("delete")
     search()
@@ -122,7 +141,7 @@ def deleteRecord():
         elif choice > 2:
             print("Invalid choice.")
         else:
-            command = f"delete from {dataTableName} where {dataTableFields[0]} = '{givenId}'"
+            command = f"delete from {dataTableName} where \"{dataTableFields[0]}\" = '{givenId}'"
             cursor.execute(command)
             printSuccessMessage("Deleted")
             connection.commit()
